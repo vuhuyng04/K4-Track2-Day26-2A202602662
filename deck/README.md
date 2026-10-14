@@ -153,24 +153,23 @@ atk_08 (forged_card) → atk_01 (shadow) → atk_10 (identity/aud)
 **Ordered by round scale.** Rounds 8-10 are worth ×1.5, rounds 4-7 ×1.25, rounds 1-3 ×1.0, so
 the cards that land against the widest range of gateways go last: `atk_08` / `atk_01` / `atk_10`
 carry a forged signature, an unvouched fingerprint and a mismatched `aud` that only a gateway
-running all four identity checks refuses. The route-in-body cards (`atk_03`, `atk_02`, `atk_06`)
-and the injected-note card (`atk_04`) are refused by any gateway that routes on the header and
-scans its arguments, so they open, where they are cheapest to lose. Measured with spar's own
-`_exchange` over seeds 1-5, this order raises the mean damage dealt from 100.4 to 106.6 against
-`operator` and from 86.6 to 94.6 against `adversary`, with no change against `rookie`. Layers
+running all four identity checks refuses. The replica and header cards (`atk_03`, `atk_02`, `atk_06`)
+and the injected-note card (`atk_04`) are the ones a careful defender handles best, so they open,
+where they are cheapest to lose. Measured with spar's own
+`_exchange` over seeds 1-5, this order raises the mean damage dealt against `operator` and
+`adversary` compared with the starter order, with no change against `rookie`. Layers
 still alternate (MCP, gateway, MCP, gateway, MCP, A2A, A2A, A2A, MCP, A2A), so a defender who
 hardens against whatever landed last round is still exposed the next. **Benching all 4 blanks is
 this deck's own aggressive choice, not a rule**: trading an attack for a blank, and where in the
 order to place it, is the strategic lever RULES.md's blank mechanic creates.
 
-**`defense_event` is `gateway.denied` on every attack except `atk_05` and `atk_09`.** `atk_03`
-(drift) and `atk_04` (poisoned_result) were moved to it as section 7 step 6 says: a route
-smuggled in the body and an instruction riding in the arguments are both refused at the gateway
-by `adversary`, so the cards stay held by the top bot while now landing an `enforcement_failure`
-on a gateway that forwards them. `atk_05` (schema_bomb) and `atk_09` (faithless_peer) keep their
-honest defences (`gateway.budget_held`, `a2a.crosschecked`): those are beaten by narrowing and by
-cross-checking, not by a deny, and declaring a deny there would make the card unheld by
-`adversary`, outside the lethality band.
+**`defense_event` keeps each card's honest defence.** `atk_03` (drift, `registry.pinned`),
+`atk_04` (poisoned_result, `guardrail.refused`), `atk_05` (schema_bomb, `gateway.budget_held`) and
+`atk_09` (faithless_peer, `a2a.crosschecked`) do NOT declare `gateway.denied`, despite section 7
+step 6. `swap_replica` and `poison_row` are POST-dispatch ops in `kit/mcp/mutations.py`: they
+rewrite the RESULT, not the Command, so no gateway can see them at `decide()` time. Declaring a
+deny there would charge `enforcement_failure` to every defender (`adversary` included), which puts
+the card outside the lethality band and gets it rejected at lock.
 
 ---
 
