@@ -86,6 +86,7 @@ the point is this file has no reason to want any of it in the first place.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 import zlib
 from typing import Any, Mapping, Protocol, runtime_checkable
 
@@ -591,6 +592,11 @@ class Gateway:
                 return f"route declared in the request body ({k}={cmd.args.get(k)!r}); routing is header-only"
         # Instructions riding inside the arguments are injected content, not a request.
         blob = " ".join(str(v) for v in cmd.args.values() if isinstance(v, (str, int, float)))
+        # The learner we serve is not "another learner": drop their own id before
+        # scanning, so a request about their own record is never read as an attack.
+        act_id = str(getattr(self.ctx, "act", "") or "").split(":", 1)[-1]
+        if act_id:
+            blob = re.sub(rf"(?i)(learner:)?{re.escape(act_id)}\b", " ", blob)
         scan = guardrails.scan_for_injected_instructions(blob)
         if scan.suspicious:
             return f"instruction-shaped content in arguments ({', '.join(scan.matched_patterns[:3])})"

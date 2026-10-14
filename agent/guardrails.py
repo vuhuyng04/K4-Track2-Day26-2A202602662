@@ -177,7 +177,7 @@ _INJECTION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ("cross-learner-write", r"\b(record|file|write|update|log|mark)\b[^.\n]{0,60}\b(under|for|to|into)\s+(learner:)?sv-\d{3,}"),
         ("fake-tool-result", r"</(note|tool_result|system)>|<(tool_result|system)>"),
         ("vi-ignore", r"b[ỏo] qua (m[ọo]i |t[ấa]t c[ảa] |c[áa]c )?(h[ưu][ớo]ng d[ẫa]n|ch[ỉi] d[ẫa]n|l[ệe]nh)"),
-        ("vi-cross-learner", r"(ghi|c[ậa]p nh[ậa]t|ghi nh[ậa]n|ghi đi[ểe]m|ghi diem|ghi chung)[^.\n]{0,60}(learner:)?sv-\d{3,}"),
+        ("vi-cross-learner", r"\b(ghi|c[ậa]p nh[ậa]t|ghi nh[ậa]n|ghi đi[ểe]m|ghi diem|ghi chung)\b[^.\n]{0,60}(learner:)?sv-\d{3,}"),
         ("vi-reveal", r"(ti[ếe]t l[ộo]|in ra)[^.\n]{0,30}(kh[óo]a b[íi] m[ậa]t|m[ậa]t kh[ẩa]u|token|api key|system prompt)"),
     )
 )
