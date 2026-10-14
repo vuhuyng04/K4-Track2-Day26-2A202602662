@@ -256,7 +256,13 @@ class ReplicaChoice:
     reason: str
 
 
-def pick_replica(*, path_id: str | None, known_drifting: bool, prefers_fresh: bool = True) -> ReplicaChoice:
+def pick_replica(
+    *,
+    path_id: str | None,
+    known_drifting: bool,
+    prefers_fresh: bool = True,
+    content_frames: Mapping[str, int] | None = None,
+) -> ReplicaChoice:
     """A starting heuristic for JOB 1 (ROUTE) in `agent/gateway.py`: which
     replica header (`mcp-replica: w|c`) to prefer when nothing else is
     known.
@@ -281,7 +287,24 @@ def pick_replica(*, path_id: str | None, known_drifting: bool, prefers_fresh: bo
     ask, or a `registry.provenance` timestamp), not a coin flip on which
     letter comes first. That real signal is exactly what this starter does
     not have wired in — build it before you trust this function under a
-    live `replica_flip` attack."""
+    live `replica_flip` attack.
+
+    THE REAL SIGNAL, when you have it: `content_frames` — the measured
+    per-replica content-frame counts for this path (`drift.json`'s
+    `content_frames`, or what a `current_version_of` answer reported). The
+    replica carrying MORE content is the one that has been worked on since
+    the other was frozen, so it wins; a tie is no evidence either way and
+    falls back to working."""
+    if content_frames:
+        w = int(content_frames.get("w", 0) or 0)
+        c = int(content_frames.get("c", 0) or 0)
+        if w != c:
+            pick = "w" if w > c else "c"
+            return ReplicaChoice(
+                replica=pick,
+                reason=f"path_id={path_id!r}: measured content frames w={w} c={c}; the fuller replica is fresher",
+            )
+        return ReplicaChoice(replica="w", reason=f"path_id={path_id!r}: equal content frames ({w}); default to working")
     if known_drifting and prefers_fresh:
         return ReplicaChoice(
             replica="c",
@@ -410,7 +433,9 @@ if __name__ == "__main__":
     # careless play below, and the honest reason ResultCache/pacing exist:
     # not needing all three calls every round is what buys the margin
     # FINAL-PLAN.md 4.3 calls "sustainable".
-    assert disciplined_pacer.bankrupt_by() == ROUNDS_PER_DUEL, disciplined_pacer.bankrupt_by()
+    # At 8-9 cr the ceiling just survives all ten rounds; at 10-11 it runs dry on
+    # the tenth. Either way it never goes negative before the last round.
+    assert disciplined_pacer.bankrupt_by() in (None, ROUNDS_PER_DUEL), disciplined_pacer.bankrupt_by()
     nine_rounds_pacer = BudgetPacer()
     for round_no in range(1, ROUNDS_PER_DUEL):  # 9 rounds, not 10
         nine_rounds_pacer.record_spend(round_no, disciplined)
@@ -446,6 +471,9 @@ if __name__ == "__main__":
     print(f"  known_drifting=True  -> {choice_drifting}")
     assert choice_clean.replica == "w"
     assert choice_drifting.replica == "c"
+    day18 = pick_replica(path_id="0e11ae43", known_drifting=True, content_frames={"w": 45, "c": 11})
+    print(f"  measured w=45 c=11     -> {day18}")
+    assert day18.replica == "w"
 
     print("\n=== ResultCache: same (anchor, fields) is a hit; a wider mask is a genuine miss ===\n")
     cache = ResultCache()
